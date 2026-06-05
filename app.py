@@ -13,6 +13,10 @@ from sumy.summarizers.lsa import LsaSummarizer
 from collections import Counter
 import math
 import re
+import nltk
+
+nltk.download('punkt')
+nltk.download('punkt_tab')
 
 app = Flask(__name__)
 CORS(app)
