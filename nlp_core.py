@@ -1,16 +1,33 @@
-"""
-nlp_core.py — Shared NLP logic
-Imported by both app.py (Flask) and streamlit_app.py (HF Spaces).
-"""
-
 import spacy
 import math
+import nltk
 from collections import Counter
 
 # ── spaCy — loaded once ───────────────────────────────────────────────────────
 print("Loading spaCy model...")
-nlp = spacy.load("en_core_web_sm")
+try:
+    nlp = spacy.load("en_core_web_sm")
+except OSError:
+    from spacy.cli import download
+    download("en_core_web_sm")
+    nlp = spacy.load("en_core_web_sm")
 print("spaCy ready.")
+
+nltk.download('punkt')
+nltk.download('punkt_tab')
+
+try:
+    nltk.data.find("tokenizers/punkt")
+except LookupError:
+    nltk.download("punkt")
+
+try:
+    nltk.data.find("tokenizers/punkt_tab")
+except LookupError:
+    nltk.download("punkt_tab")
+
+
+
 
 # ── HuggingFace pipelines — lazy loaded on first call ─────────────────────────
 _summarizer = None
@@ -61,12 +78,15 @@ def analyse_sentiment(text: str) -> dict:
     confidence = round(min(abs(polarity) * 2, 1.0) * 100, 1)
 
     sentences = []
-    for sent in blob.sentences:
-        p = round(sent.sentiment.polarity, 3)
+    doc = nlp(text)
+    
+    for sent in doc.sents:
+        p = round(TextBlob(sent.text).sentiment.polarity, 3)
+    
         sentences.append({
-            "text":     str(sent),
+            "text": sent.text,
             "polarity": p,
-            "label":    "Positive" if p > 0.1 else "Negative" if p < -0.1 else "Neutral"
+            "label": "Positive" if p > 0.1 else "Negative" if p < -0.1 else "Neutral"
         })
 
     return {
